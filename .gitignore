@@ -58,3 +58,4 @@ target/
 
 # PyCharm project files
 idea/
+.idea/
