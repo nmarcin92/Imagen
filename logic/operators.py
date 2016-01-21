@@ -30,6 +30,8 @@ def select(population, base):
 
     population = sorted(population, key=lambda p: p.fitness, reverse=True)
 
+    x = population[0].fitness
+
     min_fitness = min([ind.fitness for ind in population]) - 1
     fitness_sum = sum([ind.fitness - min_fitness for ind in population])
     roulette = [[ind, 0] for ind in population]
@@ -39,10 +41,9 @@ def select(population, base):
         acc += norm_fitness
         r[1] = acc
 
-    abc = 1
-    print "$ current best fitness: " + str(
-        (int(round(100.0 * population[0].fitness) / float(
-            SIZE_X * SIZE_Y * (3 * (255 ** 2)))))) + " value:" + str(population[0].fitness)
+    # print "$ current best fitness: " + str(
+    #     (int(round(100.0 * population[0].fitness) / float(
+    #         SIZE_X * SIZE_Y * (3 * (255 ** 2)))))) + " value:" + str(population[0].fitness)
 
     parents_survived = int(round(float(POPULATION_SIZE) * PARENTS_SURVIVAL))
     new_population = population[:parents_survived]

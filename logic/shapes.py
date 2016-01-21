@@ -1,6 +1,5 @@
 import random
 
-from logic.utils import count_line, line_y, merge_lists
 from params import SIZE_X, MUTATION_SIZE, SIZE_Y, INITIAL_SHAPES_SIZE
 
 
@@ -31,23 +30,6 @@ class Triangle(Shape):
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
-        self.left_x, self.middle_x, self.right_x = -1, -1, -1
-        self.trailing_edge, self.left_edge, self.right_edge = None, None, None
-        self.traverse_dir = None
-        self.update_traverse_params()
-
-    def update_traverse_params(self):
-        self.normalize()
-        points = sorted([self.p1, self.p2, self.p3], key=lambda p: p[0])
-        self.left_x = points[0][0]
-        self.middle_x = points[1][0]
-        self.right_x = points[2][0]
-
-        self.trailing_edge = count_line(points[0], points[2])
-        self.left_edge = count_line(points[0], points[1])
-        self.right_edge = count_line(points[1], points[2])
-
-        self.traverse_dir = 1 if self.left_edge[0] > self.trailing_edge[0] else -1
 
     def normalize(self):
         xs = []
@@ -60,31 +42,64 @@ class Triangle(Shape):
 
             xs.append(p[0])
 
-    def count_traverse_direction(self):
-        return 1 if self.left_edge[0] > self.trailing_edge[0] else -1
-
-    def draw(self, image_array):
-        for x in range(self.left_x, self.right_x + 1):
-            bound_edge = self.left_edge if x <= self.middle_x else self.right_edge
-            for y in range(line_y(self.trailing_edge, x), line_y(bound_edge, x), self.traverse_dir):
-                image_array[y][x] = self.color_pixel(image_array[y][x])
-
-    def color_pixel(self, old_color):
-        if old_color is None:
-            return self.color
-        else:
-            return merge_lists(old_color, self.color, lambda c1, c2: int(round((c1 + c2) / 2.0)))
-
     def mutate_shape(self):
         p = random.choice([self.p1, self.p2, self.p3])
-        dx = random.gauss(0, SIZE_X * MUTATION_SIZE)
-        dy = random.gauss(0, SIZE_Y * MUTATION_SIZE)
+        dx = random.gauss(-SIZE_X*MUTATION_SIZE/2.0, SIZE_X * MUTATION_SIZE/2.0)
+        dy = random.gauss(-SIZE_Y*MUTATION_SIZE/2.0, SIZE_Y * MUTATION_SIZE/2.0)
 
         p[0] = int(round(p[0] + dx))
         p[1] = int(round(p[1] + dy))
 
-        self.update_traverse_params()
+        self.normalize()
 
     def clone(self):
         return Triangle(list(self.p1), list(self.p2), list(self.p3), list(self.color))
 
+
+class Circle(Shape):
+
+    @staticmethod
+    def generate():
+        s = [random.randint(SIZE_X * INITIAL_SHAPES_SIZE, SIZE_X*(1-INITIAL_SHAPES_SIZE)-1),
+             random.randint(SIZE_Y * INITIAL_SHAPES_SIZE, SIZE_Y*(1-INITIAL_SHAPES_SIZE)-1)]
+        r = (SIZE_X + SIZE_Y) / 2.0 * INITIAL_SHAPES_SIZE
+        color = [random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
+
+        c = Circle(s, r, color)
+        c.normalize()
+        return c
+
+    def __init__(self, s, r, color):
+        super(Circle, self).__init__(color)
+        self.s = s
+        self.r = r
+
+    def mutate_shape(self):
+        # center point mutation
+        if bool(random.getrandbits(1)):
+            dsx = random.gauss(-SIZE_X*MUTATION_SIZE/2.0, SIZE_X * MUTATION_SIZE/2.0)
+            dsy = random.gauss(-SIZE_Y*MUTATION_SIZE/2.0, SIZE_Y * MUTATION_SIZE/2.0)
+            self.s[0] += int(round(dsx))
+            self.s[1] += int(round(dsy))
+
+        #radius mutation
+        else:
+            size = (SIZE_X+SIZE_Y)/2.0
+            self.r += int(round(random.gauss(-size*MUTATION_SIZE/2.0, size*MUTATION_SIZE/2.0)))
+
+        self.normalize()
+
+    def normalize(self):
+        s = self.s
+        r = self.r
+        while s[0]-r < 0:
+            s[0] += 1
+        while s[0]+r > SIZE_X-1:
+            s[0] -= 1
+        while s[1]-r < 0:
+            s[1] += 1
+        while s[1]+r > SIZE_Y-1:
+            s[1] -= 1
+
+    def clone(self):
+        return Circle(list(self.s), self.r, list(self.color))
